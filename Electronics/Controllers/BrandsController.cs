@@ -1,8 +1,11 @@
-﻿using Common.UserModel;
+﻿using Common.Mail;
+using Common.UpdationModel;
+using Common.UserModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Services;
+using Microsoft.EntityFrameworkCore;
+using Services.Interfaces;
 
 namespace Electronics.Controllers
 {
@@ -12,54 +15,99 @@ namespace Electronics.Controllers
     public class BrandsController : ControllerBase
     {
         private readonly IBrandService _brandService;
+        private readonly IEmailService _emailService;
 
-        public BrandsController(IBrandService brandService)
+        public BrandsController(IBrandService brandService, IEmailService emailService)
         {
             _brandService = brandService;
+            _emailService = emailService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BrandModel>>> GetAllBrands()
+        public async Task<ActionResult<IEnumerable<BrandUpdationModel>>> GetAllBrands()
         {
             var brands = await _brandService.GetAllBrands();
             return Ok(brands);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<BrandModel>> GetBrandById(int id)
+        public async Task<ActionResult<BrandUpdationModel>> GetBrandById(int id)
         {
             var brand = await _brandService.GetBrandById(id);
             if (brand == null)
             {
                 return NotFound();
             }
-            return brand;
+            return Ok(brand);
         }
 
         [HttpPost]
-        public async Task<ActionResult<BrandModel>> AddBrand(BrandModel brandModel)
+        public async Task<ActionResult> AddBrand(BrandModel brandModel)
         {
             await _brandService.AddBrand(brandModel);
-            return CreatedAtAction(nameof(GetBrandById), new { id = brandModel.BrandId }, brandModel);
+            return CreatedAtAction(nameof(GetBrandById), new { id = brandModel.BrandName }, new { message = "Brand added successfully" });
         }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBrand(int id, BrandModel brandModel)
+        #region Updation without id
+        [HttpPut]
+        public async Task<IActionResult> UpdateBrand(BrandUpdationModel brandModel)
         {
-            if (id != brandModel.BrandId)
+            try
             {
-                return BadRequest();
+                await _brandService.UpdateBrand(brandModel);
+                return NoContent();
             }
-
-            await _brandService.UpdateBrand(brandModel);
-            return NoContent();
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "Brand not found." });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "The brand was modified or deleted since it was loaded." });
+            }
         }
+        #endregion
+
+        //[HttpPut]
+        //public async Task<IActionResult> UpdateBrand(BrandModel brandModel)
+        //{
+        //    try
+        //    {
+        //        await _brandService.UpdateBrand(brandModel);
+        //        return NoContent();
+        //    }
+        //    catch (KeyNotFoundException)
+        //    {
+        //        return NotFound(new { message = "Brand not found." });
+        //    }
+        //    catch (DbUpdateConcurrencyException)
+        //    {
+        //        return Conflict(new { message = "The brand was modified or deleted since it was loaded." });
+        //    }
+        //}
+
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBrand(int id)
+        public IActionResult DeleteBrand(int id)
         {
-            await _brandService.DeleteBrand(id);
-            return NoContent();
+            try
+            {
+                 _brandService.DeleteBrand(id);
+                return Ok(new { message = "Brand deleted successfully" });
+            }
+            catch(Exception)
+            {
+                return BadRequest("Brand not found");
+            }
+
+            //var mailRequest = new MailRequest
+            //{
+            //    ToMail = "vidhi.182023@gmail.com",
+            //    Subject = "Brand Deleted",
+            //    Body = $"Brand with ID '{id}' has been deleted."
+            //};
+
+            //await _emailService.SendEmail(mailRequest);
+            //return Ok(new { message = "Brand deleted successfully" });
         }
     }
 }

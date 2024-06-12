@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Common.UpdationModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,10 +11,11 @@ namespace Common.UserModel
     {
         public string ProductName { get; set; } = null!;
 
-        public string CategoryName { get; set; } = null!;
+        public int CategoryId { get; set; } 
 
-        public string BrandName { get; set; } = null!;
-
+        public int BrandId { get; set; } 
+   
         public int Quantity { get; set; }
+   
     }
 }

@@ -1,16 +1,24 @@
 ﻿using AutoMapper;
 using Common.EntityClass;
+using Common.Mail;
+using Common.UpdationModel;
 using Common.UserModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Services;
+using Microsoft.EntityFrameworkCore;
+using Services.Classes;
+using Services.Interfaces;
 
 namespace Electronics.Controllers
 {
+    
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoryController : ControllerBase
     {
+
         private readonly ICategoryService _categoryService;
         private readonly IMapper _mapper;
 
@@ -21,7 +29,7 @@ namespace Electronics.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryModel>>> GetAllCategories()
+        public async Task<ActionResult<IEnumerable<CategoryUpdationModel>>> GetAllCategories()
         {
             var categories = await _categoryService.GetAllCategories();
             return Ok(categories);
@@ -30,40 +38,64 @@ namespace Electronics.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<CategoryModel>> GetCategoryById(int id)
         {
-            var category = await _categoryService.GetCategoryByName(id.ToString());
-            if (category == null)
+            var categoryModel = await _categoryService.GetCategoryById(id);
+            if (categoryModel == null)
             {
-                return NotFound();
+                return NotFound("Invalid ID");
             }
-            return category;
+            return Ok(categoryModel);
         }
 
         [HttpPost]
-        public async Task<ActionResult<CategoryModel>> AddCategory(CategoryModel categoryModel)
+        public async Task<ActionResult> AddCategory(CategoryModel categoryModel)
         {
-            var category = _mapper.Map<Category>(categoryModel);
-            //await _categoryService.AddCategory(category);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, _mapper.Map<CategoryModel>(category));
+            await _categoryService.AddCategory(categoryModel);
+            return Ok("Category added successfully");
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, CategoryModel categoryModel)
+        [HttpPut]
+        public async Task<ActionResult> UpdateCategory(CategoryUpdationModel CategoryModel)
         {
-            //if (id != categoryModel.CategoryId)
-            //{
-            //    return BadRequest();
-            //}
+            if (CategoryModel.CategoryId <= 0)
+            {
+                return BadRequest(new { message = "Invalid category ID." });
+            }
 
-            //var category = _mapper.Map<Category>(categoryModel);
-            //await _categoryService.UpdateCategory(category);
-            return NoContent();
+            try
+            {
+                await _categoryService.UpdateCategory(CategoryModel);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { message = "Category not found." });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict(new { message = "The category was modified or deleted since it was loaded." });
+            }
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategory(int id)
+        public IActionResult DeleteCategory(int id)
         {
-            //await _categoryService.DeleteCategory(id);
-            return NoContent();
+            try
+            {
+                _categoryService.DeleteCategory(id);
+                return Ok(new { message = "Category deleted successfully" });
+            }
+            catch (Exception)
+            {
+                return BadRequest("Category not found");
+            }
+            //var existingCategory = await _categoryService.GetCategoryById(id);
+            //if (existingCategory == null)
+            //{
+            //    return NotFound("Invalid ID");
+            //}
+
+            //_categoryService.DeleteCategory(id);
+            //return Ok("Category deleted successfully");
         }
     }
 }

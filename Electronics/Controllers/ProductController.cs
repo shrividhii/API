@@ -1,8 +1,12 @@
-﻿using Common.UserModel;
+﻿using AutoMapper;
+using Common.Mail;
+using Common.UpdationModel;
+using Common.UserModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Services;
+using Services.Classes;
+using Services.Interfaces;
 
 namespace Electronics.Controllers
 {
@@ -11,55 +15,65 @@ namespace Electronics.Controllers
     
     public class ProductController : ControllerBase
     {
-        private readonly IProductService _productService;
+        private readonly IProductService _service;
 
-        public ProductController(IProductService productService)
+        public ProductController(IProductService service)
         {
-            _productService = productService;
+            _service = service;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductModel>>> GetAllProducts()
+        public async Task<ActionResult<IEnumerable<ProductUpdationModel>>> GetAll()
         {
-            var products = await _productService.GetAllProducts();
+            var products = await _service.GetAll();
             return Ok(products);
         }
 
-        [HttpGet("{name}")]
-        public async Task<ActionResult<ProductModel>> GetProductByName(string name)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ProductModel>> GetById(int id)
         {
-            var product = await _productService.GetProductByName(name);
+            var product = await _service.GetById(id);
             if (product == null)
             {
                 return NotFound();
             }
-            return product;
+            return Ok(product);
         }
 
         [HttpPost]
-        public async Task<ActionResult<ProductModel>> AddProduct(ProductModel productModel)
+        public async Task<ActionResult> Add(ProductModel model)
         {
-            await _productService.AddProduct(productModel);
-            return CreatedAtAction(nameof(GetProductByName), new { name = productModel.ProductName }, productModel);
-        }
-
-        [HttpPut("{name}")]
-        public async Task<IActionResult> UpdateProduct(string name, ProductModel productModel)
-        {
-            if (name != productModel.ProductName)
+            var result = await _service.Add(model);
+            if (result == "Product added successfully")
             {
-                return BadRequest();
+                return Ok(result);
             }
-
-            await _productService.UpdateProduct(name, productModel);
-            return NoContent();
+            return BadRequest(result);
         }
 
-        [HttpDelete("{name}")]
-        public async Task<IActionResult> DeleteProduct(string name)
+        [HttpPut]
+        public async Task<ActionResult> Update(ProductUpdationModel model)
         {
-            await _productService.DeleteProduct(name);
-            return NoContent();
+            var result = await _service.Update(model);
+            if (result == "Product updated successfully")
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            try
+            {
+                _service.Delete(id);
+                return Ok(new { message = "Product deleted successfully" });
+            }
+            catch (Exception)
+            {
+                return BadRequest("Product not found");
+            }
         }
     }
 }

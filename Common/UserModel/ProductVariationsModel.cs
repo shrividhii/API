@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Common.UserModel
 {
-    internal class ProductVariationsModel
+    public class ProductVariationsModel
     {
-        public string ProductName { get; set; } = null!;
+        public int ProductId { get; set; }
 
         public string Color { get; set; } = null!;
 
@@ -19,6 +19,8 @@ namespace Common.UserModel
         public string Specification { get; set; } = null!;
 
         public double Discount { get; set; }
+
+        public DateOnly Date { get; set; }
 
         public int BatchNumber { get; set; }
     }

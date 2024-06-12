@@ -1,23 +1,29 @@
 using Common;
+using Common.DBEntityClass;
 using Common.EntityClass;
+using Common.Mail;
 using Common.MapperClass;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Repository;
-using Services;
+using Repository.Classes;
+using Repository.Interfaces;
+using Services.Classes;
+using Services.Interfaces;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddLogging();
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ElectronicsStoreContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddDbContext<ElectronicsStoreContextNew>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
@@ -25,10 +31,19 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IBrandRepository, BrandRepository>();
 builder.Services.AddScoped<IBrandService, BrandService>();
 
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
+builder.Services.AddScoped<IProductVariationRepository, ProductVariationRepository>();
+builder.Services.AddScoped<IProductVariationService, ProductVariationService>();
+
+builder.Services.AddScoped<IFilterRepository, FilterRepository>();
+builder.Services.AddScoped<IFilterService, FilterService>();
+
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -78,6 +93,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 
 var app = builder.Build();

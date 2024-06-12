@@ -1,15 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System;
-using Microsoft.EntityFrameworkCore;
-using Common.EntityClass;
-using AutoMapper;
-using Services;
+using Services.Interfaces;
 
 namespace Electronics.Controllers
 {
@@ -137,7 +129,7 @@ namespace Electronics.Controllers
             var userViewModel = await _userService.AuthenticateAsync(login);
             if (userViewModel != null)
             {
-                var token = _userService.GenerateJwtToken(_mapper.Map<Common.EntityClass.UserDetails>(userViewModel));
+                var token = _userService.GenerateJwtToken(_mapper.Map<Common.DBEntityClass.UserDetail>(userViewModel));
                 return Ok(new { Token = token, User = userViewModel });
             }
 

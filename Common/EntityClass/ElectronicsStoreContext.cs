@@ -33,7 +33,7 @@ public partial class ElectronicsStoreContext : DbContext
     {
         modelBuilder.Entity<Brand>(entity =>
         {
-            entity.Property(e => e.BrandId).HasColumnName("BrandID");
+            entity.Property(e => e.BrandId).HasColumnName("BrandID").ValueGeneratedOnAdd();
             entity.Property(e => e.BrandName).HasMaxLength(50);
         });
 
